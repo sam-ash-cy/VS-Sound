@@ -1,0 +1,77 @@
+{
+    "name": "VS Sound",
+    "displayName": "VS Sound",
+    "description": "Play sounds and trigger actions based on VS Code events, actions, and notifications, among other things.",
+    "version": "0.0.1",
+    "publisher": "Samuel Ashman",
+    "engines": {
+      "vscode": "^1.85.0"
+    },
+    "categories": ["Other"],
+    "activationEvents": [
+      "onStartupFinished",
+      "onCommand:vssound.playTest"
+    ],
+    "main": "./dist/extension.js",
+  
+    "contributes": {
+      "commands": [
+        {
+          "command": "vssound.playTest",
+          "title": "VS Sound: Play Test Sound"
+        }
+      ],
+      "configuration": {
+        "title": "VS Sound",
+        "properties": {
+          "vssound.enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable or disable VS Sound"
+          },
+          "vssound.sounds.terminal": {
+            "type": "string",
+            "default": "",
+            "description": "Audio file path for the first output on a terminal session"
+          },
+          "vssound.sounds.error": {
+            "type": "string",
+            "default": "",
+            "description": "Audio file path when diagnostics include errors"
+          },
+          "vssound.sounds.buildFailure": {
+            "type": "string",
+            "default": "",
+            "description": "Audio file path when a task process exits with non-zero code"
+          },
+          "vssound.sounds.buildSuccess": {
+            "type": "string",
+            "default": "",
+            "description": "Audio file path when a task process exits with code 0"
+          },
+          "vssound.sounds.test": {
+            "type": "string",
+            "default": "",
+            "description": "Audio file path for the Play Test Sound command"
+          }
+        }
+      }
+    },
+  
+    "scripts": {
+      "build": "bun build ./src/extension.ts --outfile=./dist/extension.js --target=node --format=cjs --external vscode",
+      "watch": "bun build ./src/extension.ts --outfile=./dist/extension.js --target=node --format=cjs --external vscode --watch",
+      "typecheck": "tsc --noEmit",
+      "package": "vsce package",
+      "publish": "vsce publish"
+    },
+  
+    "devDependencies": {
+      "@types/node": "^20.11.0",
+      "@types/vscode": "^1.85.0",
+      "typescript": "^5.4.0",
+      "vsce": "^2.15.0"
+    },
+  
+    "dependencies": {}
+  }
