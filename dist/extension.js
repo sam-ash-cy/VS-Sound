@@ -46,19 +46,63 @@ __export(exports_extension, {
   activate: () => activate
 });
 module.exports = __toCommonJS(exports_extension);
-var vscode7 = __toESM(require("vscode"));
+var vscode9 = __toESM(require("vscode"));
 
 // src/events/diagnostics.ts
 var vscode3 = __toESM(require("vscode"));
 
 // src/config.ts
 var vscode = __toESM(require("vscode"));
+var SOUND_KEYS = [
+  "terminal",
+  "error",
+  "buildFailure",
+  "buildSuccess",
+  "test"
+];
 function isVsSoundEnabled() {
   return vscode.workspace.getConfiguration("vssound").get("enabled", true);
+}
+function isFeatureDiagnosticsEnabled() {
+  return vscode.workspace.getConfiguration("vssound").get("features.diagnostics", true);
+}
+function isFeatureTasksEnabled() {
+  return vscode.workspace.getConfiguration("vssound").get("features.tasks", true);
 }
 function getSoundPath(kind) {
   const v = vscode.workspace.getConfiguration("vssound").get(`sounds.${kind}`, "")?.trim();
   return v || undefined;
+}
+function getDashboardState() {
+  const c = vscode.workspace.getConfiguration("vssound");
+  const sounds = {};
+  for (const k of SOUND_KEYS) {
+    sounds[k] = c.get(`sounds.${k}`, "") ?? "";
+  }
+  return {
+    enabled: c.get("enabled", true),
+    features: {
+      diagnostics: c.get("features.diagnostics", true),
+      tasks: c.get("features.tasks", true)
+    },
+    sounds
+  };
+}
+async function setVsSoundEnabled(value) {
+  await vscode.workspace.getConfiguration("vssound").update("enabled", value, vscode.ConfigurationTarget.Global);
+}
+async function setFeatureDiagnostics(value) {
+  await vscode.workspace.getConfiguration("vssound").update("features.diagnostics", value, vscode.ConfigurationTarget.Global);
+}
+async function setFeatureTasks(value) {
+  await vscode.workspace.getConfiguration("vssound").update("features.tasks", value, vscode.ConfigurationTarget.Global);
+}
+async function setSoundPaths(paths) {
+  const c = vscode.workspace.getConfiguration("vssound");
+  for (const k of SOUND_KEYS) {
+    const v = typeof paths[k] === "string" ? paths[k] : "";
+    await c.update(`sounds.${k}`, v, vscode.ConfigurationTarget.Global);
+  }
 }
 
 // src/audio/playSound.ts
@@ -126,8 +170,20 @@ function playSound(filePath) {
 }
 
 // src/requestSound.ts
-function requestSound(kind) {
+function canPlayKind(kind) {
   if (!isVsSoundEnabled()) {
+    return false;
+  }
+  if (kind === "error" && !isFeatureDiagnosticsEnabled()) {
+    return false;
+  }
+  if ((kind === "buildFailure" || kind === "buildSuccess") && !isFeatureTasksEnabled()) {
+    return false;
+  }
+  return true;
+}
+function requestSound(kind) {
+  if (!canPlayKind(kind)) {
     return;
   }
   const path = getSoundPath(kind);
@@ -186,23 +242,248 @@ function registerTerminalSounds() {
   return new vscode6.Disposable(() => {});
 }
 
+// src/panel/dashboard.ts
+var import_crypto = require("crypto");
+var vscode8 = __toESM(require("vscode"));
+
+// src/playTestAction.ts
+var vscode7 = __toESM(require("vscode"));
+function runPlayTestSound() {
+  revealVsSoundLog(true);
+  if (!isVsSoundEnabled()) {
+    vscode7.window.showWarningMessage("VS Sound is disabled.");
+    return;
+  }
+  const path = getSoundPath("test");
+  if (!path) {
+    vscode7.window.showWarningMessage('Set a path for "Test" in the VS Sound panel or settings.');
+    return;
+  }
+  logPlaySoundInfo(`Test: "${path}".`);
+  requestSound("test");
+}
+
+// src/panel/dashboard.ts
+var dashboardPanel;
+function postState(webview) {
+  webview.postMessage({ type: "state", ...getDashboardState() });
+}
+function dashboardHtml(webview) {
+  const nonce = import_crypto.randomBytes(16).toString("base64");
+  const csp = [
+    "default-src 'none'",
+    `style-src ${webview.cspSource} 'unsafe-inline'`,
+    `script-src 'nonce-${nonce}'`
+  ].join("; ");
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="${csp}" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VS Sound</title>
+  <style>
+    body {
+      padding: 16px 20px;
+      color: var(--vscode-foreground);
+      background: var(--vscode-editor-background);
+      font-family: var(--vscode-font-family);
+      font-size: var(--vscode-font-size);
+      line-height: 1.45;
+      max-width: 520px;
+    }
+    h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 16px; }
+    h2 { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.85; margin: 20px 0 10px; }
+    .row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+    label { flex: 1; cursor: pointer; }
+    input[type="text"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px 8px;
+      border: 1px solid var(--vscode-input-border, rgba(127,127,127,.35));
+      background: var(--vscode-input-background);
+      color: var(--vscode-input-foreground);
+      border-radius: 2px;
+    }
+    button {
+      padding: 8px 14px;
+      margin: 6px 8px 0 0;
+      cursor: pointer;
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      border: none;
+      border-radius: 2px;
+      font-size: var(--vscode-font-size);
+    }
+    button.secondary {
+      background: var(--vscode-button-secondaryBackground);
+      color: var(--vscode-button-secondaryForeground);
+    }
+    button:hover { opacity: 0.92; }
+    .hint { font-size: 0.85rem; opacity: 0.75; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h1>VS Sound</h1>
+
+  <div class="row">
+    <input type="checkbox" id="toggle-enabled" />
+    <label for="toggle-enabled">Enable VS Sound</label>
+  </div>
+
+  <h2>Features</h2>
+  <div class="row">
+    <input type="checkbox" id="toggle-diagnostics" />
+    <label for="toggle-diagnostics">Sounds on errors (diagnostics)</label>
+  </div>
+  <div class="row">
+    <input type="checkbox" id="toggle-tasks" />
+    <label for="toggle-tasks">Sounds on task finish (build success / failure)</label>
+  </div>
+
+  <h2>Sound file paths</h2>
+  <div class="row"><label for="sound-test">Test</label></div>
+  <input type="text" id="sound-test" placeholder="/path/to/sound.m4a" />
+  <div class="row"><label for="sound-terminal">Terminal (reserved)</label></div>
+  <input type="text" id="sound-terminal" placeholder="not available without proposed API" />
+  <div class="row"><label for="sound-error">Errors</label></div>
+  <input type="text" id="sound-error" />
+  <div class="row"><label for="sound-buildFailure">Build failure</label></div>
+  <input type="text" id="sound-buildFailure" />
+  <div class="row"><label for="sound-buildSuccess">Build success</label></div>
+  <input type="text" id="sound-buildSuccess" />
+
+  <div style="margin-top: 16px;">
+    <button type="button" id="btn-apply">Save paths</button>
+    <button type="button" id="btn-play">Play test sound</button>
+    <button type="button" id="btn-settings" class="secondary">Open Settings (UI)</button>
+  </div>
+  <p class="hint">Use the <strong>VS Sound</strong> item in the status bar (right) to reopen this panel. Paths are saved to your user settings.</p>
+
+  <script nonce="${nonce}">
+    const vscode = acquireVsCodeApi();
+
+    window.addEventListener('message', (event) => {
+      const m = event.data;
+      if (m.type !== 'state') return;
+      document.getElementById('toggle-enabled').checked = !!m.enabled;
+      document.getElementById('toggle-diagnostics').checked = !!m.features.diagnostics;
+      document.getElementById('toggle-tasks').checked = !!m.features.tasks;
+      const s = m.sounds || {};
+      ['test','terminal','error','buildFailure','buildSuccess'].forEach((k) => {
+        const el = document.getElementById('sound-' + k);
+        if (el) el.value = s[k] || '';
+      });
+    });
+
+    document.getElementById('toggle-enabled').addEventListener('change', (e) => {
+      vscode.postMessage({ type: 'setEnabled', value: e.target.checked });
+    });
+    document.getElementById('toggle-diagnostics').addEventListener('change', (e) => {
+      vscode.postMessage({ type: 'setFeatureDiagnostics', value: e.target.checked });
+    });
+    document.getElementById('toggle-tasks').addEventListener('change', (e) => {
+      vscode.postMessage({ type: 'setFeatureTasks', value: e.target.checked });
+    });
+
+    document.getElementById('btn-apply').addEventListener('click', () => {
+      const paths = {};
+      ['test','terminal','error','buildFailure','buildSuccess'].forEach((k) => {
+        paths[k] = document.getElementById('sound-' + k).value;
+      });
+      vscode.postMessage({ type: 'applyPaths', paths });
+    });
+    document.getElementById('btn-play').addEventListener('click', () => {
+      vscode.postMessage({ type: 'playTest' });
+    });
+    document.getElementById('btn-settings').addEventListener('click', () => {
+      vscode.postMessage({ type: 'openSettings' });
+    });
+
+    vscode.postMessage({ type: 'ready' });
+  </script>
+</body>
+</html>`;
+}
+async function handleMessage(message, webview) {
+  switch (message.type) {
+    case "ready":
+      postState(webview);
+      break;
+    case "playTest":
+      runPlayTestSound();
+      break;
+    case "setEnabled":
+      if (typeof message.value === "boolean") {
+        await setVsSoundEnabled(message.value);
+      }
+      break;
+    case "setFeatureDiagnostics":
+      if (typeof message.value === "boolean") {
+        await setFeatureDiagnostics(message.value);
+      }
+      break;
+    case "setFeatureTasks":
+      if (typeof message.value === "boolean") {
+        await setFeatureTasks(message.value);
+      }
+      break;
+    case "applyPaths":
+      if (message.paths && typeof message.paths === "object") {
+        await setSoundPaths(message.paths);
+        vscode8.window.showInformationMessage("VS Sound paths saved.");
+      }
+      break;
+    case "openSettings":
+      await vscode8.commands.executeCommand("workbench.action.openSettings", "vssound");
+      break;
+    default:
+      break;
+  }
+}
+function openDashboard() {
+  if (dashboardPanel) {
+    dashboardPanel.reveal(vscode8.ViewColumn.One);
+    postState(dashboardPanel.webview);
+    return;
+  }
+  dashboardPanel = vscode8.window.createWebviewPanel("vssound.dashboard", "VS Sound", vscode8.ViewColumn.One, { enableScripts: true, retainContextWhenHidden: true });
+  dashboardPanel.webview.html = dashboardHtml(dashboardPanel.webview);
+  dashboardPanel.webview.onDidReceiveMessage((msg) => {
+    handleMessage(msg, dashboardPanel.webview);
+  });
+  dashboardPanel.onDidDispose(() => {
+    dashboardPanel = undefined;
+  });
+}
+function refreshDashboardIfOpen() {
+  if (dashboardPanel) {
+    postState(dashboardPanel.webview);
+  }
+}
+function registerDashboardSideEffects(context) {
+  context.subscriptions.push(vscode8.workspace.onDidChangeConfiguration((e) => {
+    if (e.affectsConfiguration("vssound")) {
+      refreshDashboardIfOpen();
+    }
+  }));
+}
+
 // src/extension.ts
 function activate(context) {
   registerVsSoundLog(context);
   logPlaySoundInfo("Activated.");
-  context.subscriptions.push(vscode7.commands.registerCommand("vssound.playTest", () => {
-    revealVsSoundLog(true);
-    if (!isVsSoundEnabled()) {
-      vscode7.window.showWarningMessage("VS Sound is disabled in settings.");
-      return;
-    }
-    const path = getSoundPath("test");
-    if (!path) {
-      vscode7.window.showWarningMessage("Set vssound.sounds.test to an audio file path in settings.");
-      return;
-    }
-    logPlaySoundInfo(`Test command: path from settings is "${path}".`);
-    requestSound("test");
+  const status = vscode9.window.createStatusBarItem(vscode9.StatusBarAlignment.Right, 100);
+  status.command = "vssound.openDashboard";
+  status.text = "$(bell) VS Sound";
+  status.tooltip = "Open VS Sound panel";
+  status.show();
+  context.subscriptions.push(status);
+  registerDashboardSideEffects(context);
+  context.subscriptions.push(vscode9.commands.registerCommand("vssound.openDashboard", () => {
+    openDashboard();
+  }), vscode9.commands.registerCommand("vssound.playTest", () => {
+    runPlayTestSound();
   }));
   context.subscriptions.push(registerTerminalSounds(), registerDiagnosticSounds(), registerTaskSounds(), registerNotificationSounds());
 }

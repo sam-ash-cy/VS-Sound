@@ -3,30 +3,29 @@ import { registerDiagnosticSounds } from "./events/diagnostics";
 import { registerNotificationSounds } from "./events/notifications";
 import { registerTaskSounds } from "./events/tasks";
 import { registerTerminalSounds } from "./events/terminal";
-import { getSoundPath, isVsSoundEnabled } from "./config";
-import { logPlaySoundInfo, registerVsSoundLog, revealVsSoundLog } from "./logger";
-import { requestSound } from "./requestSound";
+import { logPlaySoundInfo, registerVsSoundLog } from "./logger";
+import { openDashboard, registerDashboardSideEffects } from "./panel/dashboard";
+import { runPlayTestSound } from "./playTestAction";
 
 export function activate(context: vscode.ExtensionContext): void {
     registerVsSoundLog(context);
     logPlaySoundInfo("Activated.");
 
+    const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    status.command = "vssound.openDashboard";
+    status.text = "$(bell) VS Sound";
+    status.tooltip = "Open VS Sound panel";
+    status.show();
+    context.subscriptions.push(status);
+
+    registerDashboardSideEffects(context);
+
     context.subscriptions.push(
+        vscode.commands.registerCommand("vssound.openDashboard", () => {
+            openDashboard();
+        }),
         vscode.commands.registerCommand("vssound.playTest", () => {
-            revealVsSoundLog(true);
-            if (!isVsSoundEnabled()) {
-                void vscode.window.showWarningMessage("VS Sound is disabled in settings.");
-                return;
-            }
-            const path = getSoundPath("test");
-            if (!path) {
-                void vscode.window.showWarningMessage(
-                    "Set vssound.sounds.test to an audio file path in settings.",
-                );
-                return;
-            }
-            logPlaySoundInfo(`Test command: path from settings is "${path}".`);
-            requestSound("test");
+            runPlayTestSound();
         }),
     );
 

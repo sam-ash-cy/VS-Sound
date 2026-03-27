@@ -10,12 +10,17 @@
     "categories": ["Other"],
     "activationEvents": [
       "onStartupFinished",
-      "onCommand:vssound.playTest"
+      "onCommand:vssound.playTest",
+      "onCommand:vssound.openDashboard"
     ],
     "main": "./dist/extension.js",
   
     "contributes": {
       "commands": [
+        {
+          "command": "vssound.openDashboard",
+          "title": "VS Sound: Open Panel"
+        },
         {
           "command": "vssound.playTest",
           "title": "VS Sound: Play Test Sound"
@@ -28,6 +33,16 @@
             "type": "boolean",
             "default": true,
             "description": "Enable or disable VS Sound"
+          },
+          "vssound.features.diagnostics": {
+            "type": "boolean",
+            "default": true,
+            "description": "Play sounds when diagnostics include errors"
+          },
+          "vssound.features.tasks": {
+            "type": "boolean",
+            "default": true,
+            "description": "Play sounds when tasks finish (success or failure)"
           },
           "vssound.sounds.terminal": {
             "type": "string",
