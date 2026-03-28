@@ -1,6 +1,9 @@
 import * as vscode from "vscode";
 
-/** `file:` URIs inside the workspace, or `untitled:` when a workspace is open. */
+/**
+ * Documents we attach automatic sounds to: on-disk files under a workspace root, or untitled buffers when
+ * any folder is open (matches diagnostic / save listener scope).
+ */
 export function isTrackedWorkspaceUri(uri: vscode.Uri): boolean {
     if (uri.scheme === "file") {
         return vscode.workspace.getWorkspaceFolder(uri) !== undefined;

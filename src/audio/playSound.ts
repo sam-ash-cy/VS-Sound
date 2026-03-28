@@ -1,3 +1,7 @@
+/**
+ * Cross-platform audio playback: picks a backend per OS (afplay, ffplay, mpv, MCI, PowerShell WAV, paplay/aplay).
+ * Failures go to `logPlaySoundFailure` (Output channel + stderr). Volume is best-effort per backend.
+ */
 import { spawn, spawnSync } from "child_process";
 import { Buffer } from "buffer";
 import { existsSync } from "fs";
@@ -6,6 +10,7 @@ import { extname, resolve } from "path";
 import { getVolumePercent } from "../config";
 import { logPlaySoundFailure } from "../logger";
 
+/** Expand `~/` and resolve to an absolute path for existence checks and players. */
 function resolveSoundPath(filePath: string): string {
     const t = filePath.trim();
     if (t.startsWith("~/")) {
@@ -17,6 +22,7 @@ function resolveSoundPath(filePath: string): string {
     return resolve(t);
 }
 
+/** Resolve `name` on PATH (`where` on Windows, `command -v` elsewhere). */
 function whichExecutable(name: string): string | undefined {
     if (process.platform === "win32") {
         const r = spawnSync("where.exe", [name], { encoding: "utf8", windowsHide: true });
@@ -33,6 +39,7 @@ function whichExecutable(name: string): string | undefined {
     return r.stdout.trim().split(/\r?\n/)[0] || undefined;
 }
 
+/** Fire-and-forget child process; log spawn/exit failures only. */
 function runSpawn(
     label: string,
     command: string,
@@ -56,6 +63,7 @@ function runSpawn(
     });
 }
 
+/** macOS built-in player; maps 0–100% to afplay’s 1–255 volume scale. */
 function playDarwin(resolved: string, volumePercent: number): boolean {
     const v = Math.max(1, Math.min(255, Math.round((volumePercent / 100) * 255)));
     runSpawn("afplay", "afplay", ["-v", String(v), resolved]);
@@ -83,6 +91,11 @@ function playWindowsSoundPlayer(resolved: string): boolean {
     return true;
 }
 
+/**
+ * Windows multimedia command interface via PowerShell + winmm `mciSendString`.
+ * Builds a one-off alias, sets volume (0–1000 scale), plays synchronously, closes. Path quoting uses `$dq`
+ * so `Replace` uses the string overload (char overload breaks on some paths).
+ */
 function playWindowsMci(resolved: string, volumePercent: number): void {
     const script = [
         "$ProgressPreference = 'SilentlyContinue'",
@@ -145,6 +158,7 @@ function playWindowsMci(resolved: string, volumePercent: number): void {
     });
 }
 
+/** ffmpeg’s minimal player; good volume control across formats. */
 function playFfplay(resolved: string, volumePercent: number): boolean {
     const bin = whichExecutable("ffplay");
     if (!bin) {
@@ -162,6 +176,7 @@ function playFfplay(resolved: string, volumePercent: number): boolean {
     return true;
 }
 
+/** Alternative to ffplay; similar volume flag. */
 function playMpv(resolved: string, volumePercent: number): boolean {
     const bin = whichExecutable("mpv");
     if (!bin) {
@@ -171,6 +186,7 @@ function playMpv(resolved: string, volumePercent: number): boolean {
     return true;
 }
 
+/** Last-resort on Linux: WAV only, no volume slider in this extension. */
 function playLinuxPulseOrAlsa(resolved: string): boolean {
     const ext = extname(resolved).toLowerCase();
     if (ext !== ".wav") {
@@ -189,6 +205,7 @@ function playLinuxPulseOrAlsa(resolved: string): boolean {
     return false;
 }
 
+/** Prefer ffplay/mpv for volume; fall back to WAV-only paplay/aplay. */
 function playLinuxLike(resolved: string, volumePercent: number): void {
     if (playFfplay(resolved, volumePercent)) {
         return;
@@ -204,6 +221,7 @@ function playLinuxLike(resolved: string, volumePercent: number): void {
     );
 }
 
+/** Entry: honor volume 0 = skip; resolve path; branch on `process.platform`. */
 export function playSound(filePath: string): void {
     const volumePercent = getVolumePercent();
     if (volumePercent <= 0) {

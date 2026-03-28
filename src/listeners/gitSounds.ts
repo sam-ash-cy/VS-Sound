@@ -1,6 +1,12 @@
+/**
+ * Git-related sounds via **filesystem watchers** on `.git` metadata (no `vscode.git` API dependency).
+ * HEAD / FETCH_HEAD: first read establishes baseline; later **content** changes fire sounds. MERGE_HEAD:
+ * **create** fires merge sound once per path until deleted.
+ */
 import * as vscode from "vscode";
 import { requestSound } from "../sounds/play";
 
+/** Read file as UTF-8 text for comparing `.git/*` heads; returns undefined if missing/unreadable. */
 async function readUtf8(uri: vscode.Uri): Promise<string | undefined> {
     try {
         const raw = await vscode.workspace.fs.readFile(uri);
@@ -10,16 +16,14 @@ async function readUtf8(uri: vscode.Uri): Promise<string | undefined> {
     }
 }
 
-/**
- * Watches `.git/HEAD`, `.git/FETCH_HEAD`, and `.git/MERGE_HEAD` under workspace folders.
- * First observed content is baseline only (no sound).
- */
+/** Registers watchers for each `workspaceFolder` (not updated if folders are added later without reload). */
 export function registerGitWorkspaceSounds(): vscode.Disposable {
     const disposables: vscode.Disposable[] = [];
     const lastHead = new Map<string, string>();
     const lastFetch = new Map<string, string>();
     const mergePresent = new Set<string>();
 
+    /** Compare new HEAD file contents to previous; play `gitCommit` on real ref change. */
     const considerHead = (uri: vscode.Uri): void => {
         void (async () => {
             const key = uri.fsPath;
@@ -35,6 +39,7 @@ export function registerGitWorkspaceSounds(): vscode.Disposable {
         })();
     };
 
+    /** FETCH_HEAD updates on fetch/pull; distinct from HEAD for a separate user-assignable sound. */
     const considerFetch = (uri: vscode.Uri): void => {
         void (async () => {
             const key = uri.fsPath;
@@ -50,6 +55,7 @@ export function registerGitWorkspaceSounds(): vscode.Disposable {
         })();
     };
 
+    /** MERGE_HEAD appearing usually means merge/revert/cherry-pick in progress. */
     const considerMergeCreate = (uri: vscode.Uri): void => {
         const key = uri.fsPath;
         if (mergePresent.has(key)) {
@@ -59,6 +65,7 @@ export function registerGitWorkspaceSounds(): vscode.Disposable {
         requestSound("gitMergeConflict");
     };
 
+    /** Allow a future merge on the same repo to fire create again. */
     const considerMergeDelete = (uri: vscode.Uri): void => {
         mergePresent.delete(uri.fsPath);
     };

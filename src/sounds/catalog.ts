@@ -1,4 +1,7 @@
-/** Single source of truth for sound kinds, UI labels, and file-picker filters. */
+/**
+ * Single source of truth for sound kinds, dashboard labels, placeholders, and file-picker filters.
+ * New slots require matching `vssound.sounds.*` and (if event-driven) handling in `play.ts` + a listener.
+ */
 export const SOUND_SLOTS = [
     { kind: "test", label: "Test", placeholder: "Path or Choose file…" },
     { kind: "error", label: "Errors", placeholder: "Path or Choose file…" },

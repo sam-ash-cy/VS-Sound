@@ -1,9 +1,11 @@
+/** Webview panel singleton: create/reveal VS Sound dashboard and refresh on `vssound` config changes. */
 import * as vscode from "vscode";
 import { buildDashboardHtml } from "./html";
 import { handleDashboardMessage, postDashboardState } from "./messages";
 
 let panel: vscode.WebviewPanel | undefined;
 
+/** Reuse one panel instance; `retainContextWhenHidden` avoids resetting form state when hidden. */
 export function openDashboard(): void {
     if (panel) {
         panel.reveal(vscode.ViewColumn.One);
@@ -35,6 +37,7 @@ export function refreshDashboardIfOpen(): void {
     }
 }
 
+/** Keep the open panel in sync when the user edits settings in the Settings UI. */
 export function registerDashboardSideEffects(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration((e) => {

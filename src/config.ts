@@ -1,3 +1,7 @@
+/**
+ * Reads and writes `vssound.*` workspace configuration: feature flags, sound paths, cooldowns, volume,
+ * dashboard snapshot for the webview. Most updates target **global** user settings from the panel.
+ */
 import * as vscode from "vscode";
 import type { SoundKind } from "./sounds/catalog";
 import { SOUND_KINDS } from "./sounds/catalog";
@@ -97,6 +101,7 @@ export function getCooldownMsForKind(kind: SoundKind): number {
     }
 }
 
+/** Snapshot of all cooldown keys for the dashboard. */
 function readCooldownMs(): CooldownMs {
     const c = vscode.workspace.getConfiguration("vssound");
     return {
@@ -110,6 +115,7 @@ function readCooldownMs(): CooldownMs {
     };
 }
 
+/** Trimmed path from settings; empty string treated as unset. */
 export function getSoundPath(kind: SoundKind): string | undefined {
     const v = vscode.workspace
         .getConfiguration("vssound")
@@ -118,6 +124,7 @@ export function getSoundPath(kind: SoundKind): string | undefined {
     return v || undefined;
 }
 
+/** Full state pushed to the webview on load and after panel-driven changes. */
 export function getDashboardState(): DashboardState {
     const c = vscode.workspace.getConfiguration("vssound");
     const sounds = {} as Record<SoundKind, string>;
@@ -196,6 +203,7 @@ export async function setVolumePercent(value: number): Promise<void> {
         .update("volumePercent", v, vscode.ConfigurationTarget.Global);
 }
 
+/** Bulk-apply every known `SoundKind` path from the panel “Save paths” button. */
 export async function setSoundPaths(paths: Record<string, string>): Promise<void> {
     const c = vscode.workspace.getConfiguration("vssound");
     for (const k of SOUND_KINDS) {
@@ -210,6 +218,7 @@ export async function setSoundPath(kind: SoundKind, value: string): Promise<void
         .update(`sounds.${kind}`, value, vscode.ConfigurationTarget.Global);
 }
 
+/** Updates only keys present in `values` (panel sends the full cooldown object on save). */
 export async function setCooldownMs(values: Partial<CooldownMs>): Promise<void> {
     const cfg = vscode.workspace.getConfiguration("vssound");
     const entries: [keyof CooldownMs, string][] = [

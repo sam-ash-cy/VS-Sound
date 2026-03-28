@@ -2,7 +2,7 @@
     "name": "VS Sound",
     "displayName": "VS Sound",
     "description": "Play sounds and trigger actions based on VS Code events, actions, and notifications, among other things.",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "publisher": "Samuel Ashman",
     "engines": {
       "vscode": "^1.85.0"

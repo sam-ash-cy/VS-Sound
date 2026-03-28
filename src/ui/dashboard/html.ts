@@ -1,7 +1,12 @@
+/**
+ * Inline HTML/CSS/JS string for the webview: CSP with per-load nonce, feature toggles, sound rows from catalog.
+ * Script posts messages typed in `messages.ts` (`ready`, `setEnabled`, …).
+ */
 import { randomBytes } from "crypto";
 import * as vscode from "vscode";
 import { SOUND_KINDS, SOUND_SLOTS } from "../../sounds/catalog";
 
+/** Prevent breaking attribute/text injection when embedding labels in static HTML. */
 function escapeHtml(text: string): string {
     return text
         .replace(/&/g, "&amp;")
@@ -10,6 +15,7 @@ function escapeHtml(text: string): string {
         .replace(/"/g, "&quot;");
 }
 
+/** One path row per `SOUND_SLOTS` entry (inputs use `data-kind` for message routing). */
 function soundBlocksHtml(): string {
     return SOUND_SLOTS.map(
         (s) => `
@@ -26,6 +32,7 @@ function soundBlocksHtml(): string {
     ).join("");
 }
 
+/** Full document string assigned to `WebviewPanel.webview.html`. */
 export function buildDashboardHtml(webview: vscode.Webview): string {
     const nonce = randomBytes(16).toString("base64");
     const csp = [

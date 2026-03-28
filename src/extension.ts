@@ -1,3 +1,4 @@
+/** Extension entry: status bar, commands, output channel, and all sound listeners. */
 import * as vscode from "vscode";
 import { registerVsSoundLog } from "./logger";
 import { registerDebugSounds } from "./listeners/debug";
@@ -9,6 +10,7 @@ import { registerTerminalLifecycleSounds } from "./listeners/terminalLifecycle";
 import { openDashboard, registerDashboardSideEffects } from "./ui/dashboard/panel";
 import { runPlayTestCommand } from "./sounds/play";
 
+/** Registers UI, configuration side effects, and every `register*Sounds` listener on the context. */
 export function activate(context: vscode.ExtensionContext): void {
     registerVsSoundLog(context);
 
