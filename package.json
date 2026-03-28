@@ -2,7 +2,7 @@
     "name": "vssound",
     "displayName": "VS Sound",
     "description": "Play audio feedback for diagnostics, tasks, save, debug, terminal, and Git—per-file sounds, cooldowns, and a settings panel.",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "publisher": "SamuelAshman",
     "license": "MIT",
     "icon": "logo-img/vssound.png",
