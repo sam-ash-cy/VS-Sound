@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "VS Sound: test task (success)",
+      "type": "shell",
+      "command": "node",
+      "args": ["${workspaceFolder}/tests/scripts/exit-ok.js"],
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "VS Sound: test task (failure)",
+      "type": "shell",
+      "command": "node",
+      "args": ["${workspaceFolder}/tests/scripts/exit-fail.js"],
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    }
+  ]
+}

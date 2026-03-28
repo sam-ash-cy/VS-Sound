@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { requestSound } from "../requestSound";
+import { requestSound } from "../sounds/play";
 
 export function registerTaskSounds(): vscode.Disposable {
     return vscode.tasks.onDidEndTaskProcess((e) => {

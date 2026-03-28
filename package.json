@@ -44,6 +44,18 @@
             "default": true,
             "description": "Play sounds when tasks finish (success or failure)"
           },
+          "vssound.diagnostics.edgeTriggerOnly": {
+            "type": "boolean",
+            "default": true,
+            "description": "Play error sound only when the active file gains errors (or you switch to a file that already has errors), not on every diagnostic refresh while errors remain"
+          },
+          "vssound.volumePercent": {
+            "type": "number",
+            "default": 100,
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Playback volume 0–100%. 0 = silent (skip). Applied where the player supports it (afplay, ffplay, mpv, Windows MCI). WAV via PowerShell and paplay/aplay may ignore this."
+          },
           "vssound.sounds.terminal": {
             "type": "string",
             "default": "",
@@ -68,13 +80,38 @@
             "type": "string",
             "default": "",
             "description": "Audio file path for the Play Test Sound command"
+          },
+          "vssound.cooldown.errorMs": {
+            "type": "number",
+            "default": 2000,
+            "minimum": 0,
+            "description": "Minimum milliseconds between diagnostic error sounds (0 = no limit)"
+          },
+          "vssound.cooldown.buildSuccessMs": {
+            "type": "number",
+            "default": 1000,
+            "minimum": 0,
+            "description": "Minimum milliseconds between task success sounds (0 = no limit)"
+          },
+          "vssound.cooldown.buildFailureMs": {
+            "type": "number",
+            "default": 1000,
+            "minimum": 0,
+            "description": "Minimum milliseconds between task failure sounds (0 = no limit)"
+          },
+          "vssound.cooldown.terminalMs": {
+            "type": "number",
+            "default": 2000,
+            "minimum": 0,
+            "description": "Minimum milliseconds between terminal-triggered sounds when wired (0 = no limit)"
           }
         }
       }
     },
   
     "scripts": {
-      "build": "bun build ./src/extension.ts --outfile=./dist/extension.js --target=node --format=cjs --external vscode",
+      "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+      "build": "bun run clean && bun build ./src/extension.ts --outfile=./dist/extension.js --target=node --format=cjs --external vscode",
       "watch": "bun build ./src/extension.ts --outfile=./dist/extension.js --target=node --format=cjs --external vscode --watch",
       "typecheck": "tsc --noEmit",
       "package": "vsce package",

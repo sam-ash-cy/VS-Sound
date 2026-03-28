@@ -1,11 +1,10 @@
 import * as vscode from "vscode";
-import { registerDiagnosticSounds } from "./events/diagnostics";
-import { registerNotificationSounds } from "./events/notifications";
-import { registerTaskSounds } from "./events/tasks";
-import { registerTerminalSounds } from "./events/terminal";
 import { logPlaySoundInfo, registerVsSoundLog } from "./logger";
-import { openDashboard, registerDashboardSideEffects } from "./panel/dashboard";
-import { runPlayTestSound } from "./playTestAction";
+import { registerDiagnosticSounds } from "./listeners/diagnostics";
+import { registerTaskSounds } from "./listeners/tasks";
+import { registerUnsupportedFeatureStubs } from "./listeners/stubs";
+import { openDashboard, registerDashboardSideEffects } from "./ui/dashboard/panel";
+import { runPlayTestCommand } from "./sounds/play";
 
 export function activate(context: vscode.ExtensionContext): void {
     registerVsSoundLog(context);
@@ -25,15 +24,14 @@ export function activate(context: vscode.ExtensionContext): void {
             openDashboard();
         }),
         vscode.commands.registerCommand("vssound.playTest", () => {
-            runPlayTestSound();
+            runPlayTestCommand();
         }),
     );
 
     context.subscriptions.push(
-        registerTerminalSounds(),
+        registerUnsupportedFeatureStubs(),
         registerDiagnosticSounds(),
         registerTaskSounds(),
-        registerNotificationSounds(),
     );
 }
 
