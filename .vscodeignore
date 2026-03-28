@@ -1,6 +1,7 @@
 
 src/**
 tests/**
+DEVELOPMENT.md
 tsconfig.json
 .vscode/**
 
