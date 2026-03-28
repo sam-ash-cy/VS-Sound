@@ -12,7 +12,7 @@ VS Code extension that plays audio for diagnostics, tasks, save, debug, terminal
 ## From scratch: clone → run → debug
 
 1. **Clone** this repository and open the folder in VS Code.
-2. **Install dev dependencies** (pick one):
+2. **Install dev dependencies**:
   ```bash
    bun install
   ```
@@ -20,7 +20,7 @@ VS Code extension that plays audio for diagnostics, tasks, save, debug, terminal
   ```bash
    bun run build
   ```
-   This produces `dist/extension.js` (ignored by Git if you use `git rm -r --cached dist` after adding `dist/` to `.gitignore`).
+
 4. **Typecheck** (optional):
   ```bash
    bun run typecheck
@@ -30,11 +30,11 @@ VS Code extension that plays audio for diagnostics, tasks, save, debug, terminal
 6. **Open a workspace folder** in that window
   For tasks and `${workspaceFolder}` in `.vscode/tasks.json`, use **File → Open Folder…** and select the **VS-Sound** repo root (or your test project).
 7. **Open the panel**
-  Click **$(bell) VS Sound** in the status bar (or run **VS Sound: Open Panel** from the Command Palette).
+  Run **VS Sound: Open Panel** from the Command Palette.
 8. **Set paths and toggles**
-  Use **Choose file…** for each sound you care about, turn features on/off, adjust volume and cooldowns, then **Save paths** / **Save volume** / **Save cooldowns** as needed. The panel shows **information toasts** when you change settings.
+  Use **Choose file…** for each sound you care about, turn features on/off, adjust volume and cooldowns, then **Save paths** / **Save volume** / **Save cooldowns** as needed.
 9. **Try sounds**
-  Use **Preview** on a row, or **Play test sound** for the Test slot. Use **VS Sound: Play Test Sound** from the palette for the same test (no panel toasts if blocked).
+  Use **Preview** on a row, or **Play test sound** for the Test slot. Use **VS Sound: Play Test Sound** from the palette for the same test.
 
 ## Daily development
 
