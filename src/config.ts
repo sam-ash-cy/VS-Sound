@@ -6,6 +6,13 @@ import * as vscode from "vscode";
 import type { SoundKind } from "./sounds/catalog";
 import { SOUND_KINDS } from "./sounds/catalog";
 
+/** Avoid huge strings in settings from malformed or hostile webview payloads. */
+const MAX_SOUND_PATH_CHARS = 4096;
+
+function clampSoundPath(value: string): string {
+    return value.length <= MAX_SOUND_PATH_CHARS ? value : value.slice(0, MAX_SOUND_PATH_CHARS);
+}
+
 export type CooldownMs = {
     errorMs: number;
     buildSuccessMs: number;
@@ -207,7 +214,7 @@ export async function setVolumePercent(value: number): Promise<void> {
 export async function setSoundPaths(paths: Record<string, string>): Promise<void> {
     const c = vscode.workspace.getConfiguration("vssound");
     for (const k of SOUND_KINDS) {
-        const v = typeof paths[k] === "string" ? paths[k] : "";
+        const v = typeof paths[k] === "string" ? clampSoundPath(paths[k]) : "";
         await c.update(`sounds.${k}`, v, vscode.ConfigurationTarget.Global);
     }
 }
@@ -215,7 +222,7 @@ export async function setSoundPaths(paths: Record<string, string>): Promise<void
 export async function setSoundPath(kind: SoundKind, value: string): Promise<void> {
     await vscode.workspace
         .getConfiguration("vssound")
-        .update(`sounds.${kind}`, value, vscode.ConfigurationTarget.Global);
+        .update(`sounds.${kind}`, clampSoundPath(value), vscode.ConfigurationTarget.Global);
 }
 
 /** Updates only keys present in `values` (panel sends the full cooldown object on save). */

@@ -27,6 +27,32 @@ import {
     runPlayTestCommand,
 } from "../../sounds/play";
 
+/** Webview `postMessage` data is untrusted; reject non-plain objects (prototype pollution / odd shapes). */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+    return (
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value) &&
+        Object.getPrototypeOf(value) === Object.prototype
+    );
+}
+
+/**
+ * Build a full `Record<SoundKind, string>` from the panel: only catalog keys, string values, trimmed.
+ * Unknown keys on the payload are ignored.
+ */
+function parseSoundPathsFromWebview(raw: unknown): Record<string, string> | undefined {
+    if (!isPlainObject(raw)) {
+        return undefined;
+    }
+    const out: Record<string, string> = {};
+    for (const k of SOUND_KINDS) {
+        const v = raw[k];
+        out[k] = typeof v === "string" ? v.trim() : "";
+    }
+    return out;
+}
+
 /** Push current `getDashboardState()` so inputs/checkboxes match configuration. */
 export function postDashboardState(webview: vscode.Webview): void {
     webview.postMessage({ type: "state", ...getDashboardState() });
@@ -62,10 +88,10 @@ async function pickAudioFileForKind(kind: SoundKind, webview: vscode.Webview): P
 
 /** Extract numeric cooldown fields from the webview payload; ignore invalid/missing keys. */
 function parseCooldownPayload(raw: unknown): Partial<CooldownMs> | undefined {
-    if (!raw || typeof raw !== "object") {
+    if (!isPlainObject(raw)) {
         return undefined;
     }
-    const o = raw as Record<string, unknown>;
+    const o = raw;
     const out: Partial<CooldownMs> = {};
     for (const key of [
         "errorMs",
@@ -85,18 +111,13 @@ function parseCooldownPayload(raw: unknown): Partial<CooldownMs> | undefined {
 }
 
 /** Central switch for `postMessage` types from `html.ts` embedded script. */
-export async function handleDashboardMessage(
-    message: {
-        type: string;
-        value?: boolean;
-        paths?: Record<string, string>;
-        kind?: string;
-        cooldown?: unknown;
-        volumePercent?: number;
-    },
-    webview: vscode.Webview,
-): Promise<void> {
-    switch (message.type) {
+export async function handleDashboardMessage(message: unknown, webview: vscode.Webview): Promise<void> {
+    if (!isPlainObject(message) || typeof message.type !== "string") {
+        return;
+    }
+    const m = message;
+
+    switch (m.type) {
         case "ready":
             postDashboardState(webview);
             break;
@@ -111,7 +132,7 @@ export async function handleDashboardMessage(
             break;
         }
         case "playPreview": {
-            const k = asSoundKind(message.kind);
+            const k = asSoundKind(m.kind);
             if (!k) {
                 break;
             }
@@ -125,95 +146,97 @@ export async function handleDashboardMessage(
             break;
         }
         case "pickSound": {
-            const k = asSoundKind(message.kind);
+            const k = asSoundKind(m.kind);
             if (k) {
                 await pickAudioFileForKind(k, webview);
             }
             break;
         }
         case "setEnabled":
-            if (typeof message.value === "boolean") {
-                await setVsSoundEnabled(message.value);
-                toast(message.value ? "Enabled." : "Disabled.");
+            if (typeof m.value === "boolean") {
+                await setVsSoundEnabled(m.value);
+                toast(m.value ? "Enabled." : "Disabled.");
             }
             break;
         case "setFeatureDiagnostics":
-            if (typeof message.value === "boolean") {
-                await setFeatureDiagnostics(message.value);
+            if (typeof m.value === "boolean") {
+                await setFeatureDiagnostics(m.value);
                 toast(
-                    message.value
+                    m.value
                         ? "Diagnostic error sounds are on."
                         : "Diagnostic error sounds are off.",
                 );
             }
             break;
         case "setFeatureTasks":
-            if (typeof message.value === "boolean") {
-                await setFeatureTasks(message.value);
+            if (typeof m.value === "boolean") {
+                await setFeatureTasks(m.value);
                 toast(
-                    message.value
+                    m.value
                         ? "Task finish sounds (success / failure) are on."
                         : "Task finish sounds are off.",
                 );
             }
             break;
         case "setFeatureSave":
-            if (typeof message.value === "boolean") {
-                await setFeatureSave(message.value);
-                toast(message.value ? "Save sounds are on." : "Save sounds are off.");
+            if (typeof m.value === "boolean") {
+                await setFeatureSave(m.value);
+                toast(m.value ? "Save sounds are on." : "Save sounds are off.");
             }
             break;
         case "setFeatureDebug":
-            if (typeof message.value === "boolean") {
-                await setFeatureDebug(message.value);
+            if (typeof m.value === "boolean") {
+                await setFeatureDebug(m.value);
                 toast(
-                    message.value
+                    m.value
                         ? "Debug session start/end sounds are on."
                         : "Debug session sounds are off.",
                 );
             }
             break;
         case "setFeatureTerminal":
-            if (typeof message.value === "boolean") {
-                await setFeatureTerminal(message.value);
+            if (typeof m.value === "boolean") {
+                await setFeatureTerminal(m.value);
                 toast(
-                    message.value
+                    m.value
                         ? "Terminal open / exit sounds are on."
                         : "Terminal sounds are off.",
                 );
             }
             break;
         case "setFeatureGit":
-            if (typeof message.value === "boolean") {
-                await setFeatureGit(message.value);
-                toast(message.value ? "Git event sounds are on." : "Git event sounds are off.");
+            if (typeof m.value === "boolean") {
+                await setFeatureGit(m.value);
+                toast(m.value ? "Git event sounds are on." : "Git event sounds are off.");
             }
             break;
         case "setDiagnosticsEdgeOnly":
-            if (typeof message.value === "boolean") {
-                await setDiagnosticsEdgeTriggerOnly(message.value);
+            if (typeof m.value === "boolean") {
+                await setDiagnosticsEdgeTriggerOnly(m.value);
                 toast(
-                    message.value
+                    m.value
                         ? "Error edge mode on (sound when errors appear or count increases, not every refresh)."
                         : "Error edge mode off (more frequent sounds; cooldown still applies).",
                 );
             }
             break;
         case "applyVolume":
-            if (typeof message.volumePercent === "number" && Number.isFinite(message.volumePercent)) {
-                const v = Math.max(0, Math.min(100, Math.round(message.volumePercent)));
+            if (typeof m.volumePercent === "number" && Number.isFinite(m.volumePercent)) {
+                const v = Math.max(0, Math.min(100, Math.round(m.volumePercent)));
                 await setVolumePercent(v);
                 toast(`Volume saved (${v}%). 0% skips playback.`);
             }
             break;
-        case "applyPaths":
-            if (message.paths && typeof message.paths === "object") {
-                await setSoundPaths(message.paths);
+        case "applyPaths": {
+            const paths = parseSoundPathsFromWebview(m.paths);
+            if (paths !== undefined) {
+                await setSoundPaths(paths);
                 toast("Sound paths saved.");
             }
             break;
+        }
         case "applyCooldowns": {
-            const c = parseCooldownPayload(message.cooldown);
+            const c = parseCooldownPayload(m.cooldown);
             if (c) {
                 await setCooldownMs(c);
                 toast("Cooldowns saved.");

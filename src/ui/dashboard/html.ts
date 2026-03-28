@@ -38,6 +38,8 @@ export function buildDashboardHtml(webview: vscode.Webview): string {
     const csp = [
         "default-src 'none'",
         `style-src ${webview.cspSource} 'unsafe-inline'`,
+        "img-src 'none'",
+        "font-src 'none'",
         `script-src 'nonce-${nonce}'`,
     ].join("; ");
 

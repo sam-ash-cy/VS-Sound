@@ -25,7 +25,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     context.subscriptions.push(
         vscode.commands.registerCommand("vssound.openDashboard", () => {
-            openDashboard();
+            openDashboard(context.extensionUri);
         }),
         vscode.commands.registerCommand("vssound.playTest", () => {
             runPlayTestCommand();

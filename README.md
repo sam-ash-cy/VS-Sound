@@ -1,6 +1,6 @@
 # VS Sound
 
-VS Code extension that plays audio for diagnostics, tasks, save, debug, terminal, Git events, and more. Configure everything from the **VS Sound** panel or `vssound.`* settings.
+VS Code extension that plays audio for diagnostics, tasks, save, debug, terminal, Git events, and more. Configure everything from the **VS Sound** panel or `vssound.*` settings.
 
 ## Requirements
 

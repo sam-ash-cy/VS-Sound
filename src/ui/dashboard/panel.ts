@@ -5,8 +5,11 @@ import { handleDashboardMessage, postDashboardState } from "./messages";
 
 let panel: vscode.WebviewPanel | undefined;
 
-/** Reuse one panel instance; `retainContextWhenHidden` avoids resetting form state when hidden. */
-export function openDashboard(): void {
+/**
+ * Reuse one panel instance; `retainContextWhenHidden` avoids resetting form state when hidden.
+ * `localResourceRoots` is limited to the extension folder so the webview cannot read arbitrary workspace URIs as resources.
+ */
+export function openDashboard(extensionUri: vscode.Uri): void {
     if (panel) {
         panel.reveal(vscode.ViewColumn.One);
         postDashboardState(panel.webview);
@@ -17,7 +20,11 @@ export function openDashboard(): void {
         "vssound.dashboard",
         "VS Sound",
         vscode.ViewColumn.One,
-        { enableScripts: true, retainContextWhenHidden: true },
+        {
+            enableScripts: true,
+            retainContextWhenHidden: true,
+            localResourceRoots: [extensionUri],
+        },
     );
 
     panel.webview.html = buildDashboardHtml(panel.webview);

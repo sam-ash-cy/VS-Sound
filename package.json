@@ -1,203 +1,220 @@
 {
     "name": "VS Sound",
     "displayName": "VS Sound",
-    "description": "Play sounds and trigger actions based on VS Code events, actions, and notifications, among other things.",
+    "description": "Play sounds and trigger actions based on VS Code events and actions, among other things.",
     "version": "0.0.2",
     "publisher": "Samuel Ashman",
     "engines": {
-      "vscode": "^1.85.0"
+        "vscode": "^1.85.0"
     },
     "categories": ["Other"],
+    "keywords": [
+        "sound",
+        "audio",
+        "diagnostics",
+        "errors",
+        "tasks",
+        "build",
+        "terminal",
+        "git",
+        "debug",
+        "save",
+        "productivity",
+        "feedback",
+        "multimedia",
+        "alerts",
+        "vscode",
+        "fun",
+        "sound",
+        "terminal",
+        "productivity"
+    ],
     "activationEvents": ["onStartupFinished"],
     "main": "./dist/extension.js",
-  
     "contributes": {
-      "commands": [
-        {
-          "command": "vssound.openDashboard",
-          "title": "VS Sound: Open Panel"
-        },
-        {
-          "command": "vssound.playTest",
-          "title": "VS Sound: Play Test Sound"
+        "commands": [
+            {
+                "command": "vssound.openDashboard",
+                "title": "VS Sound: Open Panel"
+            },
+            {
+                "command": "vssound.playTest",
+                "title": "VS Sound: Play Test Sound"
+            }
+        ],
+        "configuration": {
+            "title": "VS Sound",
+            "properties": {
+                "vssound.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable or disable VS Sound"
+                },
+                "vssound.features.diagnostics": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Play sounds when diagnostics include errors"
+                },
+                "vssound.features.tasks": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Play sounds when tasks finish (success or failure)"
+                },
+                "vssound.features.save": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Play a sound when the active editor document is saved"
+                },
+                "vssound.features.debug": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Play sounds when a debug session starts or ends"
+                },
+                "vssound.features.terminal": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Play sounds when a terminal is opened or when its shell exits"
+                },
+                "vssound.features.git": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Play sounds for Git workspace events (HEAD, FETCH_HEAD, merge start)"
+                },
+                "vssound.diagnostics.edgeTriggerOnly": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Play error sound only when the active file gains errors (or you switch to a file that already has errors), not on every diagnostic refresh while errors remain"
+                },
+                "vssound.volumePercent": {
+                    "type": "number",
+                    "default": 100,
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Playback volume 0–100%. 0 = silent (skip). Applied where the player supports it (afplay, ffplay, mpv, Windows MCI). WAV via PowerShell and paplay/aplay may ignore this."
+                },
+                "vssound.sounds.save": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Audio file path when a workspace file is saved"
+                },
+                "vssound.sounds.debugStart": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Audio file path when a debug session starts"
+                },
+                "vssound.sounds.debugEnd": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Audio file path when a debug session ends"
+                },
+                "vssound.sounds.terminalOpen": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Audio file path when a terminal is created"
+                },
+                "vssound.sounds.terminalExitSuccess": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Audio file path when a terminal shell exits with code 0"
+                },
+                "vssound.sounds.terminalExitFailure": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Audio file path when a terminal shell exits with a non-zero code"
+                },
+                "vssound.sounds.gitCommit": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Audio file path when .git/HEAD changes (commit, checkout, merge, etc.)"
+                },
+                "vssound.sounds.gitPull": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Audio file path when .git/FETCH_HEAD updates (fetch/pull)"
+                },
+                "vssound.sounds.gitMergeConflict": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Audio file path when .git/MERGE_HEAD appears (merge/revert in progress)"
+                },
+                "vssound.sounds.error": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Audio file path when diagnostics include errors"
+                },
+                "vssound.sounds.buildFailure": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Audio file path when a task process exits with non-zero code"
+                },
+                "vssound.sounds.buildSuccess": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Audio file path when a task process exits with code 0"
+                },
+                "vssound.sounds.test": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Audio file path for the Play Test Sound command"
+                },
+                "vssound.cooldown.errorMs": {
+                    "type": "number",
+                    "default": 2000,
+                    "minimum": 0,
+                    "description": "Minimum milliseconds between diagnostic error sounds (0 = no limit)"
+                },
+                "vssound.cooldown.buildSuccessMs": {
+                    "type": "number",
+                    "default": 1000,
+                    "minimum": 0,
+                    "description": "Minimum milliseconds between task success sounds (0 = no limit)"
+                },
+                "vssound.cooldown.buildFailureMs": {
+                    "type": "number",
+                    "default": 1000,
+                    "minimum": 0,
+                    "description": "Minimum milliseconds between task failure sounds (0 = no limit)"
+                },
+                "vssound.cooldown.terminalMs": {
+                    "type": "number",
+                    "default": 2000,
+                    "minimum": 0,
+                    "description": "Minimum milliseconds between terminal open/exit sounds (0 = no limit)"
+                },
+                "vssound.cooldown.saveMs": {
+                    "type": "number",
+                    "default": 300,
+                    "minimum": 0,
+                    "description": "Minimum milliseconds between save sounds (0 = no limit)"
+                },
+                "vssound.cooldown.debugMs": {
+                    "type": "number",
+                    "default": 500,
+                    "minimum": 0,
+                    "description": "Minimum milliseconds between debug start/end sounds (0 = no limit)"
+                },
+                "vssound.cooldown.gitMs": {
+                    "type": "number",
+                    "default": 1000,
+                    "minimum": 0,
+                    "description": "Minimum milliseconds between Git-triggered sounds (0 = no limit)"
+                }
+            }
         }
-      ],
-      "configuration": {
-        "title": "VS Sound",
-        "properties": {
-          "vssound.enabled": {
-            "type": "boolean",
-            "default": true,
-            "description": "Enable or disable VS Sound"
-          },
-          "vssound.features.diagnostics": {
-            "type": "boolean",
-            "default": true,
-            "description": "Play sounds when diagnostics include errors"
-          },
-          "vssound.features.tasks": {
-            "type": "boolean",
-            "default": true,
-            "description": "Play sounds when tasks finish (success or failure)"
-          },
-          "vssound.features.save": {
-            "type": "boolean",
-            "default": false,
-            "description": "Play a sound when the active editor document is saved"
-          },
-          "vssound.features.debug": {
-            "type": "boolean",
-            "default": false,
-            "description": "Play sounds when a debug session starts or ends"
-          },
-          "vssound.features.terminal": {
-            "type": "boolean",
-            "default": false,
-            "description": "Play sounds when a terminal is opened or when its shell exits"
-          },
-          "vssound.features.git": {
-            "type": "boolean",
-            "default": false,
-            "description": "Play sounds for Git workspace events (HEAD, FETCH_HEAD, merge start)"
-          },
-          "vssound.diagnostics.edgeTriggerOnly": {
-            "type": "boolean",
-            "default": true,
-            "description": "Play error sound only when the active file gains errors (or you switch to a file that already has errors), not on every diagnostic refresh while errors remain"
-          },
-          "vssound.volumePercent": {
-            "type": "number",
-            "default": 100,
-            "minimum": 0,
-            "maximum": 100,
-            "description": "Playback volume 0–100%. 0 = silent (skip). Applied where the player supports it (afplay, ffplay, mpv, Windows MCI). WAV via PowerShell and paplay/aplay may ignore this."
-          },
-          "vssound.sounds.save": {
-            "type": "string",
-            "default": "",
-            "description": "Audio file path when a workspace file is saved"
-          },
-          "vssound.sounds.debugStart": {
-            "type": "string",
-            "default": "",
-            "description": "Audio file path when a debug session starts"
-          },
-          "vssound.sounds.debugEnd": {
-            "type": "string",
-            "default": "",
-            "description": "Audio file path when a debug session ends"
-          },
-          "vssound.sounds.terminalOpen": {
-            "type": "string",
-            "default": "",
-            "description": "Audio file path when a terminal is created"
-          },
-          "vssound.sounds.terminalExitSuccess": {
-            "type": "string",
-            "default": "",
-            "description": "Audio file path when a terminal shell exits with code 0"
-          },
-          "vssound.sounds.terminalExitFailure": {
-            "type": "string",
-            "default": "",
-            "description": "Audio file path when a terminal shell exits with a non-zero code"
-          },
-          "vssound.sounds.gitCommit": {
-            "type": "string",
-            "default": "",
-            "description": "Audio file path when .git/HEAD changes (commit, checkout, merge, etc.)"
-          },
-          "vssound.sounds.gitPull": {
-            "type": "string",
-            "default": "",
-            "description": "Audio file path when .git/FETCH_HEAD updates (fetch/pull)"
-          },
-          "vssound.sounds.gitMergeConflict": {
-            "type": "string",
-            "default": "",
-            "description": "Audio file path when .git/MERGE_HEAD appears (merge/revert in progress)"
-          },
-          "vssound.sounds.error": {
-            "type": "string",
-            "default": "",
-            "description": "Audio file path when diagnostics include errors"
-          },
-          "vssound.sounds.buildFailure": {
-            "type": "string",
-            "default": "",
-            "description": "Audio file path when a task process exits with non-zero code"
-          },
-          "vssound.sounds.buildSuccess": {
-            "type": "string",
-            "default": "",
-            "description": "Audio file path when a task process exits with code 0"
-          },
-          "vssound.sounds.test": {
-            "type": "string",
-            "default": "",
-            "description": "Audio file path for the Play Test Sound command"
-          },
-          "vssound.cooldown.errorMs": {
-            "type": "number",
-            "default": 2000,
-            "minimum": 0,
-            "description": "Minimum milliseconds between diagnostic error sounds (0 = no limit)"
-          },
-          "vssound.cooldown.buildSuccessMs": {
-            "type": "number",
-            "default": 1000,
-            "minimum": 0,
-            "description": "Minimum milliseconds between task success sounds (0 = no limit)"
-          },
-          "vssound.cooldown.buildFailureMs": {
-            "type": "number",
-            "default": 1000,
-            "minimum": 0,
-            "description": "Minimum milliseconds between task failure sounds (0 = no limit)"
-          },
-          "vssound.cooldown.terminalMs": {
-            "type": "number",
-            "default": 2000,
-            "minimum": 0,
-            "description": "Minimum milliseconds between terminal open/exit sounds (0 = no limit)"
-          },
-          "vssound.cooldown.saveMs": {
-            "type": "number",
-            "default": 300,
-            "minimum": 0,
-            "description": "Minimum milliseconds between save sounds (0 = no limit)"
-          },
-          "vssound.cooldown.debugMs": {
-            "type": "number",
-            "default": 500,
-            "minimum": 0,
-            "description": "Minimum milliseconds between debug start/end sounds (0 = no limit)"
-          },
-          "vssound.cooldown.gitMs": {
-            "type": "number",
-            "default": 1000,
-            "minimum": 0,
-            "description": "Minimum milliseconds between Git-triggered sounds (0 = no limit)"
-          }
-        }
-      }
     },
-  
     "scripts": {
-      "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-      "build": "bun run clean && bun build ./src/extension.ts --outfile=./dist/extension.js --target=node --format=cjs --external vscode",
-      "watch": "bun build ./src/extension.ts --outfile=./dist/extension.js --target=node --format=cjs --external vscode --watch",
-      "typecheck": "tsc --noEmit",
-      "package": "vsce package",
-      "publish": "vsce publish"
+        "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+        "build": "bun run clean && bun build ./src/extension.ts --outfile=./dist/extension.js --target=node --format=cjs --external vscode",
+        "watch": "bun build ./src/extension.ts --outfile=./dist/extension.js --target=node --format=cjs --external vscode --watch",
+        "typecheck": "tsc --noEmit",
+        "package": "vsce package",
+        "publish": "vsce publish"
     },
-  
     "devDependencies": {
-      "@types/node": "^20.11.0",
-      "@types/vscode": "^1.85.0",
-      "typescript": "^5.4.0",
-      "vsce": "^2.15.0"
+        "@types/node": "^20.11.0",
+        "@types/vscode": "^1.85.0",
+        "@vscode/vsce": "^3.7.1",
+        "typescript": "^5.4.0"
     },
-  
     "dependencies": {}
-  }
+}
