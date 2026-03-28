@@ -1,26 +1,21 @@
 import * as vscode from "vscode";
 import { isDiagnosticsEdgeTriggerOnly } from "../config";
 import { requestSound } from "../sounds/play";
+import { isTrackedWorkspaceUri } from "../util/workspaceUri";
 
 const DEBOUNCE_MS = 500;
 /** Before we trust "no errors" from diagnostics to reset tab-back suppression. */
 const CLEAR_SUPPRESS_MS = 600;
 
-/** Only `file:` URIs inside the workspace, or `untitled:` when a workspace is open. */
-function isTrackedDocument(uri: vscode.Uri): boolean {
-    if (uri.scheme === "file") {
-        return vscode.workspace.getWorkspaceFolder(uri) !== undefined;
-    }
-    if (uri.scheme === "untitled") {
-        const folders = vscode.workspace.workspaceFolders;
-        return folders !== undefined && folders.length > 0;
-    }
-    return false;
-}
-
 function uriHasErrors(uri: vscode.Uri): boolean {
     const diags = vscode.languages.getDiagnostics(uri);
     return diags.some((d) => d.severity === vscode.DiagnosticSeverity.Error);
+}
+
+function uriErrorCount(uri: vscode.Uri): number {
+    return vscode.languages
+        .getDiagnostics(uri)
+        .filter((d) => d.severity === vscode.DiagnosticSeverity.Error).length;
 }
 
 function activeEditorHasErrors(): boolean {
@@ -29,7 +24,7 @@ function activeEditorHasErrors(): boolean {
         return false;
     }
     const uri = editor.document.uri;
-    if (!isTrackedDocument(uri)) {
+    if (!isTrackedWorkspaceUri(uri)) {
         return false;
     }
     return uriHasErrors(uri);
@@ -38,7 +33,7 @@ function activeEditorHasErrors(): boolean {
 function parseTrackedUri(uriKey: string): vscode.Uri | undefined {
     try {
         const u = vscode.Uri.parse(uriKey);
-        return isTrackedDocument(u) ? u : undefined;
+        return isTrackedWorkspaceUri(u) ? u : undefined;
     } catch {
         return undefined;
     }
@@ -48,7 +43,11 @@ export function registerDiagnosticSounds(): vscode.Disposable {
     let debounceTimer: ReturnType<typeof setTimeout> | undefined;
     /** Last active editor URI key (stable string from `document.uri.toString()`). */
     let lastActiveUriKey: string | undefined;
-    let hadErrorsOnActive = false;
+    /**
+     * Error count we last applied for the active tab (edge mode). When the user already has errors and
+     * the language service adds more, count increases → play again. Pure refreshes keep the same count → no play.
+     */
+    let lastErrorCountBaseline = 0;
     /**
      * URIs the user left while that document still had errors. While a URI is in this set, focusing it
      * again must not replay the sound (tab back). Cleared only after diagnostics stay error-free (delayed).
@@ -71,7 +70,7 @@ export function registerDiagnosticSounds(): vscode.Disposable {
             uriKey,
             setTimeout(() => {
                 pendingClearSuppress.delete(uriKey);
-                if (!isTrackedDocument(uri)) {
+                if (!isTrackedWorkspaceUri(uri)) {
                     return;
                 }
                 if (!uriHasErrors(uri)) {
@@ -83,7 +82,7 @@ export function registerDiagnosticSounds(): vscode.Disposable {
 
     const onDiagnosticUrisChanged = (uris: readonly vscode.Uri[]): void => {
         for (const uri of uris) {
-            if (!isTrackedDocument(uri)) {
+            if (!isTrackedWorkspaceUri(uri)) {
                 continue;
             }
             const key = uri.toString();
@@ -115,7 +114,7 @@ export function registerDiagnosticSounds(): vscode.Disposable {
         if (!editor || editor.document.isClosed) {
             noteLeavingDocument(lastActiveUriKey);
             lastActiveUriKey = undefined;
-            hadErrorsOnActive = false;
+            lastErrorCountBaseline = 0;
             return;
         }
 
@@ -130,13 +129,14 @@ export function registerDiagnosticSounds(): vscode.Disposable {
         lastActiveUriKey = uriKey;
 
         const nowHasErrors = activeEditorHasErrors();
+        const errorCount = nowHasErrors ? uriErrorCount(editor.document.uri) : 0;
         const edgeOnly = isDiagnosticsEdgeTriggerOnly();
 
         if (!edgeOnly) {
             if (nowHasErrors) {
                 requestSound("error");
             }
-            hadErrorsOnActive = nowHasErrors;
+            lastErrorCountBaseline = errorCount;
             return;
         }
 
@@ -144,14 +144,14 @@ export function registerDiagnosticSounds(): vscode.Disposable {
             if (nowHasErrors && !tabBackSuppress.has(uriKey)) {
                 requestSound("error");
             }
-            hadErrorsOnActive = nowHasErrors;
+            lastErrorCountBaseline = errorCount;
             return;
         }
 
-        if (nowHasErrors && !hadErrorsOnActive && !tabBackSuppress.has(uriKey)) {
+        if (nowHasErrors && errorCount > lastErrorCountBaseline) {
             requestSound("error");
         }
-        hadErrorsOnActive = nowHasErrors;
+        lastErrorCountBaseline = errorCount;
     };
 
     const scheduleDebouncedCheck = (): void => {

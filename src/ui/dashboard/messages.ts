@@ -3,8 +3,12 @@ import {
     getDashboardState,
     setCooldownMs,
     setDiagnosticsEdgeTriggerOnly,
+    setFeatureDebug,
     setFeatureDiagnostics,
+    setFeatureGit,
+    setFeatureSave,
     setFeatureTasks,
+    setFeatureTerminal,
     setSoundPath,
     setSoundPaths,
     setVolumePercent,
@@ -36,7 +40,6 @@ async function pickAudioFileForKind(kind: SoundKind, webview: vscode.Webview): P
     }
     await setSoundPath(kind, uris[0].fsPath);
     postDashboardState(webview);
-    void vscode.window.showInformationMessage(`VS Sound: path set for ${kind}.`);
 }
 
 function parseCooldownPayload(raw: unknown): Partial<CooldownMs> | undefined {
@@ -45,7 +48,15 @@ function parseCooldownPayload(raw: unknown): Partial<CooldownMs> | undefined {
     }
     const o = raw as Record<string, unknown>;
     const out: Partial<CooldownMs> = {};
-    for (const key of ["errorMs", "buildSuccessMs", "buildFailureMs", "terminalMs"] as const) {
+    for (const key of [
+        "errorMs",
+        "buildSuccessMs",
+        "buildFailureMs",
+        "terminalMs",
+        "saveMs",
+        "debugMs",
+        "gitMs",
+    ] as const) {
         const v = o[key];
         if (typeof v === "number" && Number.isFinite(v)) {
             out[key] = v;
@@ -89,60 +100,57 @@ export async function handleDashboardMessage(
         case "setEnabled":
             if (typeof message.value === "boolean") {
                 await setVsSoundEnabled(message.value);
-                void vscode.window.showInformationMessage(
-                    message.value ? "VS Sound is enabled." : "VS Sound is disabled.",
-                );
             }
             break;
         case "setFeatureDiagnostics":
             if (typeof message.value === "boolean") {
                 await setFeatureDiagnostics(message.value);
-                void vscode.window.showInformationMessage(
-                    message.value
-                        ? "VS Sound: sounds on diagnostic errors are enabled."
-                        : "VS Sound: sounds on diagnostic errors are disabled.",
-                );
             }
             break;
         case "setFeatureTasks":
             if (typeof message.value === "boolean") {
                 await setFeatureTasks(message.value);
-                void vscode.window.showInformationMessage(
-                    message.value
-                        ? "VS Sound: sounds on task finish (success/failure) are enabled."
-                        : "VS Sound: sounds on task finish (success/failure) are disabled.",
-                );
+            }
+            break;
+        case "setFeatureSave":
+            if (typeof message.value === "boolean") {
+                await setFeatureSave(message.value);
+            }
+            break;
+        case "setFeatureDebug":
+            if (typeof message.value === "boolean") {
+                await setFeatureDebug(message.value);
+            }
+            break;
+        case "setFeatureTerminal":
+            if (typeof message.value === "boolean") {
+                await setFeatureTerminal(message.value);
+            }
+            break;
+        case "setFeatureGit":
+            if (typeof message.value === "boolean") {
+                await setFeatureGit(message.value);
             }
             break;
         case "setDiagnosticsEdgeOnly":
             if (typeof message.value === "boolean") {
                 await setDiagnosticsEdgeTriggerOnly(message.value);
-                void vscode.window.showInformationMessage(
-                    message.value
-                        ? "VS Sound: error sounds only when errors appear (edge mode) — on."
-                        : "VS Sound: error sounds on every diagnostic pass while errors exist — edge mode off.",
-                );
             }
             break;
         case "applyVolume":
             if (typeof message.volumePercent === "number" && Number.isFinite(message.volumePercent)) {
                 await setVolumePercent(message.volumePercent);
-                void vscode.window.showInformationMessage(
-                    `VS Sound: volume set to ${Math.max(0, Math.min(100, Math.round(message.volumePercent)))}%.`,
-                );
             }
             break;
         case "applyPaths":
             if (message.paths && typeof message.paths === "object") {
                 await setSoundPaths(message.paths);
-                void vscode.window.showInformationMessage("VS Sound paths saved.");
             }
             break;
         case "applyCooldowns": {
             const c = parseCooldownPayload(message.cooldown);
             if (c) {
                 await setCooldownMs(c);
-                void vscode.window.showInformationMessage("VS Sound cooldowns saved.");
             }
             break;
         }

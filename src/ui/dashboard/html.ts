@@ -141,6 +141,22 @@ export function buildDashboardHtml(webview: vscode.Webview): string {
     <label for="toggle-tasks">Sounds on task finish (build success / failure)</label>
   </div>
   <div class="row feature-row">
+    <input type="checkbox" id="toggle-save" />
+    <label for="toggle-save">Sounds on save (active workspace file)</label>
+  </div>
+  <div class="row feature-row">
+    <input type="checkbox" id="toggle-debug" />
+    <label for="toggle-debug">Sounds on debug session start / end</label>
+  </div>
+  <div class="row feature-row">
+    <input type="checkbox" id="toggle-terminal" />
+    <label for="toggle-terminal">Sounds on terminal open / shell exit</label>
+  </div>
+  <div class="row feature-row">
+    <input type="checkbox" id="toggle-git" />
+    <label for="toggle-git">Sounds on Git (HEAD, fetch, merge start)</label>
+  </div>
+  <div class="row feature-row">
     <input type="checkbox" id="toggle-edge-diagnostics" />
     <label for="toggle-edge-diagnostics">Error sounds only when errors appear (edge mode)</label>
   </div>
@@ -169,8 +185,20 @@ export function buildDashboardHtml(webview: vscode.Webview): string {
     <input type="number" class="cd-ms" id="cd-buildFailureMs" min="0" step="100" />
   </div>
   <div class="cooldown-row">
-    <label for="cd-terminalMs">Terminal (reserved)</label>
+    <label for="cd-terminalMs">Terminal open / exit</label>
     <input type="number" class="cd-ms" id="cd-terminalMs" min="0" step="100" />
+  </div>
+  <div class="cooldown-row">
+    <label for="cd-saveMs">Save</label>
+    <input type="number" class="cd-ms" id="cd-saveMs" min="0" step="100" />
+  </div>
+  <div class="cooldown-row">
+    <label for="cd-debugMs">Debug start / end</label>
+    <input type="number" class="cd-ms" id="cd-debugMs" min="0" step="100" />
+  </div>
+  <div class="cooldown-row">
+    <label for="cd-gitMs">Git events</label>
+    <input type="number" class="cd-ms" id="cd-gitMs" min="0" step="100" />
   </div>
   <button type="button" id="btn-save-cooldowns" class="small" style="margin-top: 4px;">Save cooldowns</button>
 
@@ -195,6 +223,14 @@ ${soundBlocksHtml()}
       document.getElementById('toggle-enabled').checked = !!m.enabled;
       document.getElementById('toggle-diagnostics').checked = !!m.features.diagnostics;
       document.getElementById('toggle-tasks').checked = !!m.features.tasks;
+      const saveEl = document.getElementById('toggle-save');
+      if (saveEl) saveEl.checked = !!m.features.save;
+      const debugEl = document.getElementById('toggle-debug');
+      if (debugEl) debugEl.checked = !!m.features.debug;
+      const termEl = document.getElementById('toggle-terminal');
+      if (termEl) termEl.checked = !!m.features.terminal;
+      const gitEl = document.getElementById('toggle-git');
+      if (gitEl) gitEl.checked = !!m.features.git;
       const edgeEl = document.getElementById('toggle-edge-diagnostics');
       if (edgeEl) edgeEl.checked = m.diagnosticsEdgeOnly !== false;
       const volEl = document.getElementById('volume-percent');
@@ -210,6 +246,12 @@ ${soundBlocksHtml()}
         document.getElementById('cd-buildSuccessMs').value = String(cd.buildSuccessMs);
         document.getElementById('cd-buildFailureMs').value = String(cd.buildFailureMs);
         document.getElementById('cd-terminalMs').value = String(cd.terminalMs);
+        const saveCd = document.getElementById('cd-saveMs');
+        if (saveCd) saveCd.value = String(cd.saveMs);
+        const debugCd = document.getElementById('cd-debugMs');
+        if (debugCd) debugCd.value = String(cd.debugMs);
+        const gitCd = document.getElementById('cd-gitMs');
+        if (gitCd) gitCd.value = String(cd.gitMs);
       }
     });
 
@@ -221,6 +263,18 @@ ${soundBlocksHtml()}
     });
     document.getElementById('toggle-tasks').addEventListener('change', (e) => {
       vscode.postMessage({ type: 'setFeatureTasks', value: e.target.checked });
+    });
+    document.getElementById('toggle-save').addEventListener('change', (e) => {
+      vscode.postMessage({ type: 'setFeatureSave', value: e.target.checked });
+    });
+    document.getElementById('toggle-debug').addEventListener('change', (e) => {
+      vscode.postMessage({ type: 'setFeatureDebug', value: e.target.checked });
+    });
+    document.getElementById('toggle-terminal').addEventListener('change', (e) => {
+      vscode.postMessage({ type: 'setFeatureTerminal', value: e.target.checked });
+    });
+    document.getElementById('toggle-git').addEventListener('change', (e) => {
+      vscode.postMessage({ type: 'setFeatureGit', value: e.target.checked });
     });
     document.getElementById('toggle-edge-diagnostics').addEventListener('change', (e) => {
       vscode.postMessage({ type: 'setDiagnosticsEdgeOnly', value: e.target.checked });
@@ -257,6 +311,9 @@ ${soundBlocksHtml()}
           buildSuccessMs: readCooldownMs('cd-buildSuccessMs'),
           buildFailureMs: readCooldownMs('cd-buildFailureMs'),
           terminalMs: readCooldownMs('cd-terminalMs'),
+          saveMs: readCooldownMs('cd-saveMs'),
+          debugMs: readCooldownMs('cd-debugMs'),
+          gitMs: readCooldownMs('cd-gitMs'),
         },
       });
     });

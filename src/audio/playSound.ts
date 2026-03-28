@@ -4,7 +4,7 @@ import { existsSync } from "fs";
 import { homedir } from "os";
 import { extname, resolve } from "path";
 import { getVolumePercent } from "../config";
-import { logPlaySoundFailure, logPlaySoundInfo } from "../logger";
+import { logPlaySoundFailure } from "../logger";
 
 function resolveSoundPath(filePath: string): string {
     const t = filePath.trim();
@@ -39,8 +39,6 @@ function runSpawn(
     args: string[],
     options: { env?: NodeJS.ProcessEnv; windowsHide?: boolean } = {},
 ): void {
-    logPlaySoundInfo(`Playing via ${label}`);
-
     const child = spawn(command, args, {
         stdio: "ignore",
         windowsHide: options.windowsHide ?? process.platform === "win32",
@@ -121,8 +119,6 @@ function playWindowsMci(resolved: string, volumePercent: number): void {
 
     const encoded = Buffer.from(script, "utf16le").toString("base64");
 
-    logPlaySoundInfo("Playing via Windows MCI (winmm)");
-
     const child = spawn(
         "powershell.exe",
         ["-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded],
@@ -201,9 +197,6 @@ function playLinuxLike(resolved: string, volumePercent: number): void {
         return;
     }
     if (playLinuxPulseOrAlsa(resolved)) {
-        if (volumePercent < 100) {
-            logPlaySoundInfo("Volume slider does not apply to paplay/aplay; install ffplay or mpv for volume control.");
-        }
         return;
     }
     logPlaySoundFailure(
@@ -214,7 +207,6 @@ function playLinuxLike(resolved: string, volumePercent: number): void {
 export function playSound(filePath: string): void {
     const volumePercent = getVolumePercent();
     if (volumePercent <= 0) {
-        logPlaySoundInfo("Volume is 0% — skipping playback.");
         return;
     }
 
@@ -236,9 +228,6 @@ export function playSound(filePath: string): void {
             return;
         }
         if (playWindowsSoundPlayer(resolved)) {
-            if (volumePercent < 100) {
-                logPlaySoundInfo("Volume setting not applied for PowerShell SoundPlayer (.wav only).");
-            }
             return;
         }
         playWindowsMci(resolved, volumePercent);

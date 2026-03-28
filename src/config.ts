@@ -7,11 +7,23 @@ export type CooldownMs = {
     buildSuccessMs: number;
     buildFailureMs: number;
     terminalMs: number;
+    saveMs: number;
+    debugMs: number;
+    gitMs: number;
+};
+
+export type DashboardFeatures = {
+    diagnostics: boolean;
+    tasks: boolean;
+    save: boolean;
+    debug: boolean;
+    terminal: boolean;
+    git: boolean;
 };
 
 export type DashboardState = {
     enabled: boolean;
-    features: { diagnostics: boolean; tasks: boolean };
+    features: DashboardFeatures;
     diagnosticsEdgeOnly: boolean;
     volumePercent: number;
     sounds: Record<SoundKind, string>;
@@ -28,6 +40,22 @@ export function isFeatureDiagnosticsEnabled(): boolean {
 
 export function isFeatureTasksEnabled(): boolean {
     return vscode.workspace.getConfiguration("vssound").get<boolean>("features.tasks", true);
+}
+
+export function isFeatureSaveEnabled(): boolean {
+    return vscode.workspace.getConfiguration("vssound").get<boolean>("features.save", false) ?? false;
+}
+
+export function isFeatureDebugEnabled(): boolean {
+    return vscode.workspace.getConfiguration("vssound").get<boolean>("features.debug", false) ?? false;
+}
+
+export function isFeatureTerminalEnabled(): boolean {
+    return vscode.workspace.getConfiguration("vssound").get<boolean>("features.terminal", false) ?? false;
+}
+
+export function isFeatureGitEnabled(): boolean {
+    return vscode.workspace.getConfiguration("vssound").get<boolean>("features.git", false) ?? false;
 }
 
 export function isDiagnosticsEdgeTriggerOnly(): boolean {
@@ -51,8 +79,19 @@ export function getCooldownMsForKind(kind: SoundKind): number {
             return Math.max(0, c.get<number>("cooldown.buildSuccessMs", 1000) ?? 0);
         case "buildFailure":
             return Math.max(0, c.get<number>("cooldown.buildFailureMs", 1000) ?? 0);
-        case "terminal":
+        case "terminalOpen":
+        case "terminalExitSuccess":
+        case "terminalExitFailure":
             return Math.max(0, c.get<number>("cooldown.terminalMs", 2000) ?? 0);
+        case "save":
+            return Math.max(0, c.get<number>("cooldown.saveMs", 300) ?? 0);
+        case "debugStart":
+        case "debugEnd":
+            return Math.max(0, c.get<number>("cooldown.debugMs", 500) ?? 0);
+        case "gitCommit":
+        case "gitPull":
+        case "gitMergeConflict":
+            return Math.max(0, c.get<number>("cooldown.gitMs", 1000) ?? 0);
         default:
             return 0;
     }
@@ -65,6 +104,9 @@ function readCooldownMs(): CooldownMs {
         buildSuccessMs: Math.max(0, c.get<number>("cooldown.buildSuccessMs", 1000) ?? 0),
         buildFailureMs: Math.max(0, c.get<number>("cooldown.buildFailureMs", 1000) ?? 0),
         terminalMs: Math.max(0, c.get<number>("cooldown.terminalMs", 2000) ?? 0),
+        saveMs: Math.max(0, c.get<number>("cooldown.saveMs", 300) ?? 0),
+        debugMs: Math.max(0, c.get<number>("cooldown.debugMs", 500) ?? 0),
+        gitMs: Math.max(0, c.get<number>("cooldown.gitMs", 1000) ?? 0),
     };
 }
 
@@ -87,6 +129,10 @@ export function getDashboardState(): DashboardState {
         features: {
             diagnostics: c.get<boolean>("features.diagnostics", true),
             tasks: c.get<boolean>("features.tasks", true),
+            save: c.get<boolean>("features.save", false) ?? false,
+            debug: c.get<boolean>("features.debug", false) ?? false,
+            terminal: c.get<boolean>("features.terminal", false) ?? false,
+            git: c.get<boolean>("features.git", false) ?? false,
         },
         diagnosticsEdgeOnly: c.get<boolean>("diagnostics.edgeTriggerOnly", true) ?? true,
         volumePercent: getVolumePercent(),
@@ -111,6 +157,30 @@ export async function setFeatureTasks(value: boolean): Promise<void> {
     await vscode.workspace
         .getConfiguration("vssound")
         .update("features.tasks", value, vscode.ConfigurationTarget.Global);
+}
+
+export async function setFeatureSave(value: boolean): Promise<void> {
+    await vscode.workspace
+        .getConfiguration("vssound")
+        .update("features.save", value, vscode.ConfigurationTarget.Global);
+}
+
+export async function setFeatureDebug(value: boolean): Promise<void> {
+    await vscode.workspace
+        .getConfiguration("vssound")
+        .update("features.debug", value, vscode.ConfigurationTarget.Global);
+}
+
+export async function setFeatureTerminal(value: boolean): Promise<void> {
+    await vscode.workspace
+        .getConfiguration("vssound")
+        .update("features.terminal", value, vscode.ConfigurationTarget.Global);
+}
+
+export async function setFeatureGit(value: boolean): Promise<void> {
+    await vscode.workspace
+        .getConfiguration("vssound")
+        .update("features.git", value, vscode.ConfigurationTarget.Global);
 }
 
 export async function setDiagnosticsEdgeTriggerOnly(value: boolean): Promise<void> {
@@ -147,6 +217,9 @@ export async function setCooldownMs(values: Partial<CooldownMs>): Promise<void> 
         ["buildSuccessMs", "cooldown.buildSuccessMs"],
         ["buildFailureMs", "cooldown.buildFailureMs"],
         ["terminalMs", "cooldown.terminalMs"],
+        ["saveMs", "cooldown.saveMs"],
+        ["debugMs", "cooldown.debugMs"],
+        ["gitMs", "cooldown.gitMs"],
     ];
     for (const [key, configKey] of entries) {
         const v = values[key];

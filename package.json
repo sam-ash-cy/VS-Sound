@@ -44,6 +44,26 @@
             "default": true,
             "description": "Play sounds when tasks finish (success or failure)"
           },
+          "vssound.features.save": {
+            "type": "boolean",
+            "default": false,
+            "description": "Play a sound when the active editor document is saved"
+          },
+          "vssound.features.debug": {
+            "type": "boolean",
+            "default": false,
+            "description": "Play sounds when a debug session starts or ends"
+          },
+          "vssound.features.terminal": {
+            "type": "boolean",
+            "default": false,
+            "description": "Play sounds when a terminal is opened or when its shell exits"
+          },
+          "vssound.features.git": {
+            "type": "boolean",
+            "default": false,
+            "description": "Play sounds for Git workspace events (HEAD, FETCH_HEAD, merge start)"
+          },
           "vssound.diagnostics.edgeTriggerOnly": {
             "type": "boolean",
             "default": true,
@@ -56,10 +76,50 @@
             "maximum": 100,
             "description": "Playback volume 0–100%. 0 = silent (skip). Applied where the player supports it (afplay, ffplay, mpv, Windows MCI). WAV via PowerShell and paplay/aplay may ignore this."
           },
-          "vssound.sounds.terminal": {
+          "vssound.sounds.save": {
             "type": "string",
             "default": "",
-            "description": "Audio file path for the first output on a terminal session"
+            "description": "Audio file path when a workspace file is saved"
+          },
+          "vssound.sounds.debugStart": {
+            "type": "string",
+            "default": "",
+            "description": "Audio file path when a debug session starts"
+          },
+          "vssound.sounds.debugEnd": {
+            "type": "string",
+            "default": "",
+            "description": "Audio file path when a debug session ends"
+          },
+          "vssound.sounds.terminalOpen": {
+            "type": "string",
+            "default": "",
+            "description": "Audio file path when a terminal is created"
+          },
+          "vssound.sounds.terminalExitSuccess": {
+            "type": "string",
+            "default": "",
+            "description": "Audio file path when a terminal shell exits with code 0"
+          },
+          "vssound.sounds.terminalExitFailure": {
+            "type": "string",
+            "default": "",
+            "description": "Audio file path when a terminal shell exits with a non-zero code"
+          },
+          "vssound.sounds.gitCommit": {
+            "type": "string",
+            "default": "",
+            "description": "Audio file path when .git/HEAD changes (commit, checkout, merge, etc.)"
+          },
+          "vssound.sounds.gitPull": {
+            "type": "string",
+            "default": "",
+            "description": "Audio file path when .git/FETCH_HEAD updates (fetch/pull)"
+          },
+          "vssound.sounds.gitMergeConflict": {
+            "type": "string",
+            "default": "",
+            "description": "Audio file path when .git/MERGE_HEAD appears (merge/revert in progress)"
           },
           "vssound.sounds.error": {
             "type": "string",
@@ -103,7 +163,25 @@
             "type": "number",
             "default": 2000,
             "minimum": 0,
-            "description": "Minimum milliseconds between terminal-triggered sounds when wired (0 = no limit)"
+            "description": "Minimum milliseconds between terminal open/exit sounds (0 = no limit)"
+          },
+          "vssound.cooldown.saveMs": {
+            "type": "number",
+            "default": 300,
+            "minimum": 0,
+            "description": "Minimum milliseconds between save sounds (0 = no limit)"
+          },
+          "vssound.cooldown.debugMs": {
+            "type": "number",
+            "default": 500,
+            "minimum": 0,
+            "description": "Minimum milliseconds between debug start/end sounds (0 = no limit)"
+          },
+          "vssound.cooldown.gitMs": {
+            "type": "number",
+            "default": 1000,
+            "minimum": 0,
+            "description": "Minimum milliseconds between Git-triggered sounds (0 = no limit)"
           }
         }
       }

@@ -1,14 +1,16 @@
 import * as vscode from "vscode";
-import { logPlaySoundInfo, registerVsSoundLog } from "./logger";
+import { registerVsSoundLog } from "./logger";
+import { registerDebugSounds } from "./listeners/debug";
 import { registerDiagnosticSounds } from "./listeners/diagnostics";
+import { registerGitWorkspaceSounds } from "./listeners/gitSounds";
+import { registerSaveSounds } from "./listeners/save";
 import { registerTaskSounds } from "./listeners/tasks";
-import { registerUnsupportedFeatureStubs } from "./listeners/stubs";
+import { registerTerminalLifecycleSounds } from "./listeners/terminalLifecycle";
 import { openDashboard, registerDashboardSideEffects } from "./ui/dashboard/panel";
 import { runPlayTestCommand } from "./sounds/play";
 
 export function activate(context: vscode.ExtensionContext): void {
     registerVsSoundLog(context);
-    logPlaySoundInfo("Activated.");
 
     const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     status.command = "vssound.openDashboard";
@@ -29,9 +31,12 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     context.subscriptions.push(
-        registerUnsupportedFeatureStubs(),
         registerDiagnosticSounds(),
         registerTaskSounds(),
+        registerSaveSounds(),
+        registerDebugSounds(),
+        registerTerminalLifecycleSounds(),
+        registerGitWorkspaceSounds(),
     );
 }
 
