@@ -1,16 +1,18 @@
 {
-    "name": "VS Sound",
+    "name": "vssound",
     "displayName": "VS Sound",
-    "description": "Play sounds and trigger actions based on VS Code events and actions, among other things.",
-    "version": "0.0.2",
-    "publisher": "Samuel Ashman",
+    "description": "Play audio feedback for diagnostics, tasks, save, debug, terminal, and Git—per-file sounds, cooldowns, and a settings panel.",
+    "version": "0.1.0",
+    "publisher": "samuelashman",
+    "license": "MIT",
+    "icon": "logo-img/vssound.png",
     "engines": {
         "vscode": "^1.85.0"
     },
     "categories": ["Other"],
     "keywords": [
-        "sound",
         "audio",
+        "sound",
         "diagnostics",
         "errors",
         "tasks",
@@ -20,15 +22,16 @@
         "debug",
         "save",
         "productivity",
-        "feedback",
         "multimedia",
         "alerts",
-        "vscode",
-        "fun",
-        "sound",
-        "terminal",
-        "productivity"
+        "feedback",
+        "fun"
     ],
+    "galleryBanner": {
+        "color": "#1e1e1e",
+        "theme": "dark"
+    },
+    "preview": true,
     "activationEvents": ["onStartupFinished"],
     "main": "./dist/extension.js",
     "contributes": {
@@ -83,7 +86,7 @@
                 "vssound.diagnostics.edgeTriggerOnly": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Play error sound only when the active file gains errors (or you switch to a file that already has errors), not on every diagnostic refresh while errors remain"
+                    "description": "Play error sound when the active file gains errors or error count increases, when switching to a file with errors, and not on every diagnostic refresh while errors remain"
                 },
                 "vssound.volumePercent": {
                     "type": "number",

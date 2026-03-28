@@ -39,7 +39,7 @@ VS Code extension that plays audio for diagnostics, tasks, save, debug, terminal
 ## Daily development
 
 - **Watch build**: `bun run watch`
-- **Package a `.vsix`**: `bun run package` (requires `vsce`; installs globally or use `npx vsce package`)
+- **Package a `.vsix`**: `bun run package` (uses `@vscode/vsce`). `package.json` → `publisher` must be your [Marketplace publisher id](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#create-a-publisher), not a display name.
 
 Install a `.vsix` in VS Code: **Extensions** → **…** → **Install from VSIX…**
 
